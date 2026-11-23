@@ -1,0 +1,126 @@
+name: First look at Dust Cloaks
+description: Tell us what you thought after your first play. Every box is optional except the first two.
+title: "First look: "
+labels: ["first-look"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for playing! This is an early build and nothing here is final, so be blunt: what bored you or confused you helps as much as what you liked.
+        Put your name in the title after "First look:" (or a nickname).
+
+  - type: dropdown
+    id: reached
+    attributes:
+      label: How far did you get?
+      options:
+        - Only the title screen
+        - Part way through the Founding (the opening story)
+        - The first contracts and camp
+        - The Long Road
+        - The end of the Long Road
+    validations:
+      required: true
+
+  - type: dropdown
+    id: time
+    attributes:
+      label: How long did you play?
+      options:
+        - Under 15 minutes
+        - 15 to 30 minutes
+        - 30 to 60 minutes
+        - Over an hour
+    validations:
+      required: true
+
+  - type: textarea
+    id: first5
+    attributes:
+      label: Your first five minutes
+      description: What did you think the game was, and what did you expect to do? What caught your eye first?
+
+  - type: dropdown
+    id: clear
+    attributes:
+      label: Did you know what to do?
+      options:
+        - Always
+        - Mostly
+        - Often lost
+        - Lost most of the time
+  - type: textarea
+    id: lost
+    attributes:
+      label: Where did you get stuck or lost?
+      description: Name the screen or moment, and what you tried.
+
+  - type: dropdown
+    id: fun
+    attributes:
+      label: How fun was it, 1 to 5?
+      options: ["5 - couldn't stop", "4", "3", "2", "1 - a chore"]
+  - type: textarea
+    id: best
+    attributes:
+      label: Best moment
+  - type: textarea
+    id: worst
+    attributes:
+      label: Worst moment, or where you'd have quit
+
+  - type: dropdown
+    id: story
+    attributes:
+      label: Did the story and Cayde (your guide) pull you in?
+      options:
+        - Yes, I wanted to know what came next
+        - It was fine
+        - I skimmed it
+        - I skipped it
+  - type: dropdown
+    id: looks
+    attributes:
+      label: The look and sound
+      options:
+        - Love it
+        - Good
+        - Fine
+        - Not for me
+  - type: textarea
+    id: controls
+    attributes:
+      label: Anything awkward in the controls?
+      description: Mouse, keys, the squad's charge, the shield wall, menus.
+
+  - type: textarea
+    id: bugs
+    attributes:
+      label: Bugs
+      description: What happened, where, and what you did just before. A screenshot helps (paste it here).
+
+  - type: textarea
+    id: ideas
+    attributes:
+      label: Ideas to riff on
+      description: Anything you'd add, change or steal from another game. Wild ideas welcome.
+
+  - type: dropdown
+    id: again
+    attributes:
+      label: Would you play the next version?
+      options:
+        - Yes, send it to me
+        - Maybe
+        - Probably not
+
+  - type: input
+    id: setup
+    attributes:
+      label: What did you play on?
+      description: Browser and screen, e.g. "Chrome on a laptop" or "Firefox, big monitor".
+
+  - type: textarea
+    id: else
+    attributes:
+      label: Anything else?

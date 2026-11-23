@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dust Cloaks</title>
+<style>
+body{margin:0;overflow:hidden;background:#1a1815;font-family:Georgia,'Times New Roman',serif;color:var(--ink);user-select:none}
+#gameCanvas{display:block;image-rendering:pixelated}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:34px 16px 150px;box-sizing:border-box;overflow-y:auto;z-index:10}
+.menu-screen{background:radial-gradient(ellipse at center,rgba(0,0,0,0) 50%,rgba(70,45,20,.42) 100%),var(--parch,#d8c9a8);background-size:auto,256px 256px}
+.overlay-screen{background:rgba(0,0,0,.86);color:#dcdcdc}
+.hidden{display:none!important}
+h1{color:var(--ink-soft);font-weight:900;font-size:56px;font-variant:small-caps;margin:6px 0 4px;text-decoration:underline}
+.overlay-screen h1{color:var(--gold);text-decoration:none;font-size:34px;text-shadow:2px 2px 0 #000}
+h2.sec{width:100%;max-width:1150px;text-align:center;color:var(--ink-soft);border-bottom:3px solid var(--ink-soft);margin:26px 0 14px;
+  font-size:22px;text-transform:uppercase;letter-spacing:2px}
+.sub{font-size:15px;margin:0 0 6px;max-width:760px;text-align:center;line-height:1.5}
+.btn{background:var(--ink-soft);border:3px solid var(--ink);color:var(--parchment);padding:12px 30px;font-size:19px;font-weight:bold;cursor:pointer;
+  margin:8px;font-family:Georgia,serif;border-radius:4px;box-shadow:3px 3px 7px rgba(0,0,0,.4);transition:transform .15s}
+.btn:hover{background:#5d4e3e;transform:scale(1.04)}
+.btn.small{padding:7px 16px;font-size:14px;margin:4px}
+.btn.gold{background:#7a5a14;border-color:#3a2a05}
+.btn:disabled{opacity:.4;pointer-events:none}
+.row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:1180px}
+.card{background:rgba(245,235,215,.94);border:2px solid var(--ink-soft);width:206px;padding:12px;display:flex;flex-direction:column;
+  align-items:center;cursor:pointer;color:#1a1a1a;box-shadow:2px 2px 5px rgba(0,0,0,.3);border-radius:4px;transition:transform .15s;position:relative;box-sizing:border-box}
+.card:hover{transform:translateY(-4px);background:#fff;border-color:#000}
+.card.static{cursor:default}.card.static:hover{transform:none;background:rgba(245,235,215,.94);border-color:var(--ink-soft)}
+.card.sel{border-color:#228b22;border-width:3px;background:#e4f2e0}
+.card.off{opacity:.5;pointer-events:none;filter:grayscale(.6)}
+img.ic{height:64px;image-rendering:pixelated;margin-bottom:4px}
+img.ic.sm{height:44px}
+.tag{font-family:Georgia,sans-serif;font-size:14px;letter-spacing:0.5px;text-transform:uppercase;color:#f5efe3;background:var(--blood);
+  padding:2px 6px;border-radius:2px;align-self:center;margin-bottom:5px}
+.ttl{font-size:17px;font-weight:bold;text-align:center;margin:2px 0}
+.role{font-size:14px;font-style:italic;text-align:center;color:#444;margin-bottom:5px;font-weight:bold}
+.desc{font-size:14px;text-align:center;line-height:1.4;color:#333}
+.fl{font-size:14px;font-style:italic;color:#6b6257;margin-top:6px;text-align:center;border-top:1px solid #c9bba4;padding-top:5px}
+.stat{font-family:monospace;font-size:14px;background:rgba(0,0,0,.06);padding:4px 6px;border-radius:3px;margin:4px 0;width:100%;box-sizing:border-box;text-align:center}
+.cost{color:#8b0000;font-weight:bold;font-size:14px;margin-top:4px;text-align:center}
+.owned{color:#228b22;font-weight:bold;font-size:14px;margin-top:4px}
+.mini{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:6px}
+.mini button{font-size:14px;padding:3px 6px;font-family:Georgia;cursor:pointer;border:1px solid var(--ink-soft);background:#f5efe3;border-radius:2px}
+.mini button:hover{background:var(--ink-soft);color:#fff}
+.mini button:disabled{opacity:.35;pointer-events:none}
+.money{font-size:26px;font-weight:900;color:var(--ink-soft);margin:4px 0}
+.overlay-screen .money{color:#ffd700}
+.cols{display:flex;gap:16px;width:96%;max-width:1320px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.col{flex:1;min-width:300px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px}
+.colh{text-align:center;color:var(--gold);font-size:19px;font-weight:bold;border-bottom:2px solid var(--ink-soft);text-transform:uppercase;padding-bottom:4px;margin-bottom:10px}
+.colnote{text-align:center;font-size:14px;color:#aaa;margin:-4px 0 10px}
+.colrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.col .card{width:186px}
+.log{max-width:760px;width:100%;background:rgba(245,235,215,.92);border:2px solid var(--ink-soft);border-radius:4px;padding:12px 18px;font-size:14.5px;line-height:1.55;box-sizing:border-box}
+.log p{margin:3px 0}.log .good{color:#226b2a}.log .bad{color:#8b0000}.log b{color:#000}
+#camp-visuals{position:fixed;bottom:0;left:0;width:100%;height:150px;pointer-events:none;z-index:11}
+.camp-building{position:absolute;bottom:14px;transform:translateX(-50%);image-rendering:pixelated;height:84px}
+.inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%}
+input.name{padding:8px;font-size:22px;background:rgba(255,255,255,.85);border:2px solid var(--ink-soft);font-family:inherit;font-weight:bold;width:300px;text-align:center}
+table.man{border-collapse:collapse;background:rgba(245,235,215,.92);font-size:14px;max-width:1000px}
+table.man td,table.man th{border:1px solid #a89676;padding:4px 7px;text-align:left;vertical-align:middle}
+table.man th{background:var(--ink-soft);color:var(--parchment)}
+table.man img{height:40px;image-rendering:pixelated}
+.kbd{background:var(--ink);color:var(--parchment);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:14px}
+
+/* ---- camp, sheets and the planning table ---- */
+#gameCanvas.campview{cursor:grab}
+#gameCanvas.campview.point{cursor:pointer}
+.splash-screen{background:radial-gradient(ellipse at center,rgba(10,8,6,.35) 0%,rgba(10,8,6,.82) 100%);justify-content:center;padding:20px}
+.splash-screen h1{color:#f0e2bf;text-decoration:none;font-size:84px;text-shadow:0 4px 0 #2a1a0a,0 0 30px rgba(0,0,0,.8);margin:0}
+.splash-screen .sub{color:#e8d8b0;font-size:18px;text-shadow:0 2px 4px #000}
+.splash-screen .note{color:#cdbf9f;font-size:14px;margin:10px 0 18px}
+.sheet-screen{background:rgba(12,9,6,.62);padding:66px 16px 40px;justify-content:flex-start}
+.sheet{position:relative;max-width:1180px;width:100%;margin:0 auto;background:var(--parch,#d8c9a8);background-size:256px;border:3px solid #3a2a1a;
+  box-shadow:0 0 0 2px #8a6a3a inset,0 14px 40px rgba(0,0,0,.65);padding:22px 26px 28px;border-radius:3px;box-sizing:border-box}
+.sheet h1{text-decoration:none;font-size:40px;border-bottom:3px double var(--ink-soft);padding-bottom:4px}
+.sheet.report{max-width:840px}
+.sheet .x,#camp-panel .x{position:absolute;top:6px;right:10px;background:none;border:none;font-size:30px;line-height:1;color:var(--ink-soft);cursor:pointer;font-family:Georgia}
+.sheet .x:hover,#camp-panel .x:hover{color:#8b0000}
+#topbar{position:fixed;top:0;left:0;right:0;height:48px;z-index:14;display:flex;align-items:center;gap:10px;padding:0 12px;box-sizing:border-box;
+  background:linear-gradient(#4a3420,#2c1e12);border-bottom:3px solid #b8902a;box-shadow:0 3px 10px rgba(0,0,0,.5);color:var(--parchment);font-family:Georgia}
+#topbar .brand{font-variant:small-caps;font-weight:900;font-size:22px;color:#f0d890;letter-spacing:1px;margin-right:6px;white-space:nowrap}
+#topbar .stat{font-family:Georgia;font-size:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,220,140,.25);color:var(--parchment);padding:4px 10px;border-radius:3px;margin:0;width:auto;white-space:nowrap}
+#topbar .stat b{color:var(--gold-bright)}
+#topbar .grow{flex:1}
+#topbar .tb{background:#5a4028;border:2px solid #22160c;color:#f5ead2;font:bold 14px Georgia;padding:6px 12px;cursor:pointer;border-radius:3px;white-space:nowrap}
+#topbar .tb:hover{background:#7a5636}
+#topbar .tb.gold{background:#8a6414;color:#fff6d8}
+#topbar .tb.gold:hover{background:#a87a1c}
+#tb-settings{position:fixed;top:54px;right:12px;z-index:15;background:var(--parch);border:3px solid #3a2a1a;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.6);max-width:520px}
+#camp-panel{--cpt:clamp(72px,calc(72px + (100vw - 1280px)*0.0125),80px);--cpr:clamp(32px,calc(32px + (100vw - 1280px)*0.025),48px);position:fixed;top:var(--cpt);right:var(--cpr);width:380px;max-width:calc(100vw - 64px);max-height:calc(100vh - var(--cpt) - var(--cpr));overflow-y:auto;z-index:13;
+  background:var(--parch,#d8c9a8);background-size:256px;border:3px solid #3a2a1a;box-shadow:0 0 0 2px #8a6a3a inset,0 10px 30px rgba(0,0,0,.6);
+  padding:16px 16px 18px;box-sizing:border-box;border-radius:3px;color:#1a1a1a}
+#camp-panel h2{margin:0 26px 4px 0;font-variant:small-caps;color:#3a2a1a;font-size:24px}
+#camp-panel .pimg{display:block;margin:4px auto 6px;height:96px;image-rendering:pixelated}
+#camp-panel .card{width:100%}
+#camp-panel .btn{display:block;width:100%;margin:6px 0;font-size:15px;padding:9px}
+#camp-panel .line{display:flex;align-items:center;gap:8px;border-top:1px solid #c9bba4;padding:5px 0;font-size:14px}
+#camp-panel .line img{height:34px;image-rendering:pixelated}
+#camp-panel .line .grow{flex:1}
+#camp-panel .line button{font-size:14px;padding:3px 6px;cursor:pointer;border:1px solid var(--ink-soft);background:#f5efe3;border-radius:2px}
+#camp-hint{position:fixed;left:12px;bottom:10px;z-index:12;color:var(--parchment);font:14px Georgia;text-shadow:0 1px 3px #000;background:rgba(20,14,8,.55);padding:5px 10px;border-radius:3px}
+.table-screen{padding:60px 0 0;justify-content:flex-start;background:#3a2414}
+#table-inner{position:relative;width:100%;min-height:100%;box-sizing:border-box;padding:16px 18px 50px;background-size:288px;
+  box-shadow:inset 0 0 120px rgba(0,0,0,.75)}
+.table-head{display:flex;align-items:center;gap:14px;max-width:1320px;margin:0 auto 4px}
+.table-head h1{color:#f0d890;text-decoration:none;text-shadow:0 3px 0 var(--wood-night);font-size:42px;margin:0;flex:1}
+.table-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px 26px;max-width:1320px;margin:0 auto;position:relative;z-index:1}
+@media (max-width:980px){.table-grid{grid-template-columns:1fr}}
+.prop{position:absolute;image-rendering:pixelated;pointer-events:none;z-index:0;filter:drop-shadow(3px 5px 3px rgba(0,0,0,.55))}
+.scroll{position:relative;background:var(--parch,#d8c9a8);background-size:256px;padding:22px 20px 20px;margin:20px 8px 14px;color:var(--ink);
+  box-shadow:0 8px 16px rgba(0,0,0,.55),inset 0 0 30px rgba(120,80,30,.25)}
+.scroll::before,.scroll::after{content:'';position:absolute;left:-12px;right:-12px;height:16px;border-radius:8px;
+  background:linear-gradient(#a8743a,#6a4220 55%,#3a2410);box-shadow:0 3px 4px rgba(0,0,0,.55)}
+.scroll::before{top:-8px}.scroll::after{bottom:-8px}
+.scroll h3{margin:0 0 8px;font-variant:small-caps;font-size:23px;color:#3a2a1a;border-bottom:2px solid rgba(74,59,42,.5);padding-bottom:3px}
+.scroll .sub{max-width:none;text-align:left;font-size:14px}
+.cscrolls{display:flex;gap:16px;flex-wrap:wrap}
+.cscroll{flex:1;min-width:170px;margin:12px 4px 8px;padding:20px 14px 16px;cursor:pointer;transition:transform .15s}
+.cscroll:hover{transform:translateY(-3px)}
+.cscroll.sel{transform:translateY(-6px);box-shadow:0 0 0 3px var(--gold),0 14px 20px rgba(0,0,0,.6)}
+.cscroll .seal{position:absolute;right:8px;bottom:10px;width:48px;image-rendering:pixelated}
+.cscroll .ttl{text-align:left;font-size:17px}
+.cscroll .desc{text-align:left}
+.council{display:flex;gap:14px;align-items:flex-start}
+.council .master{width:96px;flex:none;text-align:center;font-size:14px;font-style:italic}
+.council .master img{height:96px;image-rendering:pixelated;display:block;margin:0 auto}
+.speech{position:relative;background:#fff8e6;border:2px solid var(--ink-soft);border-radius:6px;padding:8px 12px;font-style:italic;font-size:15px;margin-bottom:8px}
+.speech::before{content:'';position:absolute;left:-10px;top:16px;border:8px solid transparent;border-right-color:var(--ink-soft)}
+.dice{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0}
+.die{min-width:86px;max-width:120px;text-align:center;font-size:14px;overflow-wrap:anywhere}
+.die b{display:block;margin:0 auto 3px;width:52px;height:52px;line-height:52px;font-size:26px;border-radius:8px;background:#f8f2e2;border:3px solid var(--ink);box-shadow:2px 3px 0 var(--ink)}
+.die.success b{background:#dff0d6;color:#1e5a24}.die.partial b{background:#f5ebc8;color:#7a5a14}.die.miss b{background:#f2d8d0;color:#8b0000}
+.edges{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.edge{flex:1;min-width:150px;border:2px dashed #7a5a2a;padding:8px;cursor:pointer;background:rgba(255,250,235,.6)}
+.edge:hover{background:#fff;border-style:solid}
+.edge.on{border:2px solid #226b2a;background:#e4f2e0}
+.marchers{display:flex;gap:8px;flex-wrap:wrap}
+.marcher{min-width:92px;max-width:124px;overflow-wrap:anywhere;text-align:center;font-size:14px;cursor:pointer;border:2px solid transparent;padding:4px 2px;border-radius:3px;background:rgba(255,250,235,.45)}
+.marcher img{height:58px;image-rendering:pixelated;display:block;margin:0 auto}
+.marcher b{display:block;font-size:14px}
+.marcher.on{border-color:#226b2a;background:#e4f2e0}
+.marcher.off{opacity:.45;pointer-events:none}
+.sealbtn{display:flex;align-items:center;gap:10px;margin:14px auto 0;background:none;border:none;cursor:pointer;font:bold 20px Georgia;color:#6a1414}
+.sealbtn img{width:64px;image-rendering:pixelated;transition:transform .15s}
+.sealbtn:hover img{transform:scale(1.12) rotate(-8deg)}
+.sealbtn:disabled{opacity:.4;pointer-events:none}
+.miles p{margin:3px 0;font-size:14px}
+.miles .done{color:#1e5a24;text-decoration:line-through;text-decoration-color:rgba(30,90,36,.5)}
+.miles .next{font-weight:bold}
+.amb{display:flex;gap:10px;flex-wrap:wrap}
+.amb .cscroll{min-width:200px}
+.mapwrap{position:relative}
+.mapwrap>img{width:100%;image-rendering:pixelated;display:block;border:2px solid var(--ink-soft)}
+.fseal{position:absolute;transform:translate(-50%,-50%);text-align:center;width:120px;font-size:14px;font-weight:bold;color:#2a1a0a;text-shadow:0 0 3px #f5ead2,0 0 3px #f5ead2}
+.fseal img{width:44px;image-rendering:pixelated;display:block;margin:0 auto}
+.fseal .n{font-size:1.07em}
+.fseal.ally .n{color:#1e6a24}.fseal.host .n{color:#9a0000}
+.flist p{margin:2px 0;font-size:14px}
+.ledger .line{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(74,59,42,.35);padding:5px 0;font-size:14px}
+.ledger .line img{height:38px;image-rendering:pixelated}
+.ledger .line .grow{flex:1}
+.ledger button{font-size:14px;padding:3px 6px;cursor:pointer;border:1px solid var(--ink-soft);background:#f5efe3;border-radius:2px;margin:1px}
+.advbox{background:rgba(255,250,232,.85);border:2px solid #7a5a2a;padding:10px 14px;margin:12px auto;max-width:900px;text-align:left;border-radius:3px}
+.advbox .line{display:flex;align-items:center;gap:8px;border-top:1px solid #c9bba4;padding:5px 0;font-size:14px}
+.advbox .line img{height:38px;image-rendering:pixelated}.advbox .line .grow{flex:1}
+.advbox button{font-size:14px;padding:3px 7px;cursor:pointer;border:1px solid var(--ink-soft);background:#f5efe3;border-radius:2px;margin:1px}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="screen-title"   class="screen splash-screen"><div class="inner" id="title-inner"></div></div>
+<div id="screen-create"  class="screen sheet-screen hidden"><div class="sheet"><div class="inner" id="create-inner"></div></div></div>
+<div id="screen-roster"  class="screen sheet-screen hidden"><div class="sheet"><button class="x" onclick="renderTitle()" title="Back to camp">&#215;</button><div class="inner" id="roster-inner"></div></div></div>
+<div id="screen-camp"    class="screen sheet-screen hidden"><div class="sheet"><button class="x" onclick="renderTitle()" title="Back to camp">&#215;</button><div class="inner" id="camp-inner"></div></div></div>
+<div id="screen-manual"  class="screen sheet-screen hidden"><div class="sheet"><button class="x" onclick="renderTitle()" title="Back to camp">&#215;</button><div class="inner" id="manual-inner"></div></div></div>
+<div id="screen-debrief" class="screen sheet-screen hidden"><div class="sheet report"><div class="inner" id="debrief-inner"></div></div></div>
+<div id="screen-table"   class="screen table-screen hidden"><div id="table-inner"></div></div>
+<div id="overlay-pause"   class="screen overlay-screen hidden" style="justify-content:center"><div class="inner" id="pause-inner"></div></div>
+<div id="overlay-parlay"  class="screen overlay-screen hidden" style="justify-content:center"><div class="inner" id="parlay-inner"></div></div>
+<div id="topbar" class="hidden"></div>
+<div id="camp-panel" class="hidden"></div>
+<div id="camp-hint" class="hidden">WASD or the arrow keys walk your Squad Leader (hold Shift to run). Click buildings, plots and people.</div>
+
+<script src="assets/rankn-art.js"></script>
+<script src="assets/portraits.js"></script>
+<script src="assets/npc-portraits.js"></script>
+<script src="assets/hero-portraits.js"></script>
+<script src="js/core/boot.js"></script>
+<script src="js/art/pixel.js"></script>
+<script src="js/art/glyphs-vec.js"></script> <!-- INDEX GLYPHS-VEC: PL-1 items 1+2, the AD's vector glyph sheet and the smooth ability badge (abilIcon) -->
+<script src="js/core/rules-save-map.js"></script>
+<script src="js/combat/deployment.js"></script>
+<script src="js/combat/contracts.js"></script>
+<script src="js/combat/disarm.js"></script> <!-- INDEX TRAP2E: S6-11 trap disarm (stand still, the Scoundrel goes to it). Off: TRAP2E.on = false -->
+<script src="js/core/render.js"></script>
+<script src="js/core/sound-settings-tips.js"></script>
+<script src="js/combat/abilities.js"></script>
+<script src="js/campaign/campaign.js"></script>
+<script src="js/ui/screens.js"></script>
+<script src="js/camp/camp.js"></script>
+<script src="js/campaign/founding.js"></script>
+<script src="js/campaign/founding-story.js"></script>
+<script src="js/ui/feel.js"></script>
+<script src="js/camp/rankn-dice.js"></script>
+<script src="js/campaign/legwork.js"></script>
+<script src="js/ui/cards-portraits.js"></script>
+<script src="js/core/fixes16.js"></script>
+<script src="js/campaign/world-depth.js"></script>
+<script src="js/art/portraits.js"></script>
+<script src="js/campaign/heroes.js"></script>
+<script src="js/audio/music.js"></script>
+<script src="js/camp/scribe-bard.js"></script>
+<script src="js/combat/luck-epilogue.js"></script>
+<script src="js/combat/capstones.js"></script>
+<script src="js/combat/abilities-2b.js"></script>
+<script src="js/camp/seasons.js"></script>
+<script src="js/ui/guided-start.js"></script>
+<script src="js/combat/rivals-fog.js"></script>
+<script src="js/3d/figures-1.js"></script>
+<script src="js/3d/figures-2.js"></script>
+<script src="js/3d/cultures.js"></script>
+<script src="js/3d/world-1.js"></script>
+<script src="js/3d/world-2.js"></script>
+<script src="js/3d/maps.js"></script>
+<script src="js/camp/qol.js"></script>
+<script src="js/core/late-fixes.js"></script>
+<!-- Index 83+: improvement modules, loaded after the game script; each one wraps game functions the same way the Index sections do. -->
+<script src="js/ui/ux.js"></script>
+<script src="js/art/graphics.js"></script>
+<script src="js/campaign/story.js"></script>
+<script src="js/camp/camp-life.js"></script>   <!-- Index CAMPLIFE1: the living camp, mates remember shared contracts and talk in pairs (Fable job 9); lines come from js/lines/camp.js (Narrative) when it exists -->
+<script src="js/lines/camp.js"></script>   <!-- Narrative: CAMP_LINES for the living camp (Job 9) -->
+<script src="js/campaign/arcs.js"></script>   <!-- Index ARCS1: patron and faction story arcs, three-contract branching chains (Fable job 10); lines in js/lines/arc.js (Narrative) -->
+<script src="js/lines/arc.js"></script>   <!-- Narrative: ARC_LINES for the story arcs (Job 10) -->
+<script src="js/combat/balance.js"></script>
+<script src="js/audio/synth.js"></script>
+<script src="js/audio/combat.js"></script>
+<script src="js/audio/songs.js"></script>
+<script src="js/camp/tavern.js"></script>
+<script src="js/audio/ambience.js"></script>
+<script src="js/art/tavern.js"></script>
+<script src="js/camp/bard-stage.js"></script>
+<script src="js/art/patrons.js"></script>
+<script src="js/3d/figures.js"></script>   <!-- Index 96: 3D slaver, ram, patrons (Copilot 20) -->
+<script src="js/3d/hub.js"></script>   <!-- Index 97: 3D tavern hub (Copilot 20) -->
+<script src="js/camp/crepitus.js"></script>
+<script src="js/mp/crepitus.js"></script>
+<script src="js/campaign/map.js"></script>
+<script src="js/dev/selftest.js"></script>
+<script src="js/campaign/detachments.js"></script>   <!-- Index DET1: Detachments engine (F-01.2, Copilot 22) -->
+<script src="js/ui/detachments-ui.js"></script>   <!-- Index DET2: Detachments screens (F-01.3, Copilot 23) -->
+<script src="js/art/look.js"></script>   <!-- Index 100: VO-1 look, phase 1 palette and time-of-day grade (Fable job 5b) -->
+<script src="js/art/anim.js"></script>   <!-- Index 101: VO-1 look, phase 2 smoother animation (Fable job 5b) -->
+<script src="js/art/glow.js"></script>   <!-- Index 102: VO-1 look, phase 3 light and bloom (Fable job 5b) -->
+<script src="js/art/skin.js"></script>   <!-- Index 103: VO-1 look, phase 4 UI skin by the hour (Fable job 5b) -->
+<script src="js/audio/mood.js"></script>   <!-- Index 104: mood audio, regional beds, bright and grim layers, explore/tension/fight/victory (Fable job 6) -->
+<script src="js/mp/seats.js"></script>   <!-- Index SEAT1: co-op seats and the scaling model, docs/coop-seats.md (Fable job 7) -->
+<script src="js/combat/ally.js"></script>    <!-- Index ALLY1: the second squad on the field, docs/coop-seats.md step 2 (Fable job 7) -->
+<script src="js/mp/net.js"></script>   <!-- Index MPNET1: co-op pairing by pasted codes, rejoin tokens (Fable job 7 phase 3) -->
+<script src="js/mp/coop.js"></script>  <!-- Index MPCOOP1: co-op seats, snapshots, orders lite, guest debrief (Fable job 7 phase 3) -->
+<script src="js/mp/coop-live.js"></script> <!-- INDEX LIVE23: F-23.1 live co-op, the guest plays their own Leader by sent inputs; ON by default (Patrick 2026-11-15); off with LIVE23.on = false or ?live23=0 -->
+<script src="js/camp/sinks.js"></script>   <!-- Index SINKS1: gold sinks (Destriers 1800gp, the Masters' Tithe, bribes at a Parley, finery), audits/fable/economy.md -->
+<script src="js/3d/ground.js"></script>   <!-- Index GROUND1: VO-2 painted ground, draws only when VO2 calls it (docs/vo2-design.md) -->
+<script src="js/3d/world.js"></script>   <!-- Index STRUCT1: VO-2 structures and trees through the figure ray-caster, draws only when VO2 calls it -->
+<script src="js/3d/monsters.js"></script>   <!-- Index MON3D: VO-2 every foe through the figure renderer, draws only when VO2 is on -->
+<script src="js/3d/vo2.js"></script>   <!-- Index VO2-1: VO-2 one-world composer, on by default since Patrick's look check 2026-11-11 (docs/vo2-design.md) -->
+<script src="js/3d/vo3.js"></script>   <!-- Index VO3-1: VO-3 world art from the bin (trees, buildings, tents, rocks painted afresh; audits/fable/vo3.md) -->
+<script src="js/tutorial/cayde.js"></script>
+<script src="js/ui/briefing.js"></script>
+<script src="js/ui/briefing-council.js"></script> <!-- INDEX BR2: the War Council sits in the briefing (F-26); rollback BRIEFING.wc.on = false -->
+<script src="js/ui/polish.js"></script>
+<script src="js/core/hygiene.js"></script>
+<script src="js/art/structures.js"></script>
+<script src="js/art/openair.js"></script> <!-- INDEX OA27: open-air facilities on the barge and in the warehouse; the contents out in the open instead of a cabin with a decal --> <!-- INDEX S26: structure doors and stretch; the facilities' houses take a 60 px door, a lower wall and wider cells --> <!-- INDEX H25: hygiene pass; phase line in the F8 perf box, pump pacing on slow machines --> <!-- INDEX P24: running dust under the figures, banner swatches, Cayde's model, fog from the Command Radius, stuck arrows y-sorted --> <!-- INDEX BR1: contract briefing screen; warms the ray-cast clips before the field runs -->   <!-- Index CG1: Cayde as the guide and first Chapter Master (F-02); lines audits/cayde-guide-lines.md -->
+<script src="js/art/facades.js"></script> <!-- INDEX F28: facade batch 1 (flat and drab): lit side wall, warmer plaster, a roof colour per kind, a crisper shorter shadow -->
+<script src="js/camp/trade.js"></script> <!-- INDEX T29: trade shells (theme 4): flat-roofed barracks hall, armoury warehouse, open-front smithy, tannery lean-to, round thatch alchemist hut -->
+<script src="js/camp/armoury-1.js"></script>
+<script src="js/camp/armoury-2.js"></script>
+<script src="js/camp/armoury-3.js"></script> <!-- INDEX A32: F-24.3 officers wear their own cards: gear term in the odds, the field reads the officer's kit, send panel block, cards lost with a dead officer -->
+<script src="js/camp/armoury-4.js"></script> <!-- INDEX A33: F-24.4 co-op guests wear their own cards: loadout in hello and the seat record, host check, kit lines (Fable) -->
+<script src="js/camp/armoury-5.js"></script> <!-- INDEX A34: one-click officer kitting at the Quartermaster: a buy kits the squad picked on the Wagon page; no switch (Fable) -->
+<script src="js/campaign/share.js"></script> <!-- INDEX SHARE34 [S]: allied squads take a share of pay and loot (no switch); loads before debrief31 so the debrief reads the final Treasury -->
+<script src="js/combat/balance-f35.js"></script> <!-- INDEX BAL35 [S]: BAL-BOT balance changes behind one kill switch (BAL35.on = false) -->
+<script src="js/ui/hud-deck.js"></script> <!-- INDEX HD1: F-27.1 the Command Deck HUD: the band, the objective card, Momentum, clickable abilities and formation; no switch (Fable) -->
+<script src="js/camp/chronicle.js"></script> <!-- INDEX C25: F-25 the Scribe's book: Chronicle and Manual as two tabs; no switch -->
+<script src="js/camp/camp-build.js"></script> <!-- INDEX C31: F-31.1 camp word menu with "!" markers, plaques and a Needs-you box; no switch -->
+<script src="js/combat/terrain.js"></script> <!-- INDEX TR28: F-28 terrain, elevation and range to the tabletop; no switch -->
+<script src="js/3d/sw10.js"></script> <!-- INDEX SW10: SW-10 Firefox slow-path cuts (filter and gradient caches); no switch -->
+<script src="js/camp/defence.js"></script> <!-- INDEX DEF30: F-30 Hold the gate (fort raid: one front, wall archers, ram, ladders, towers, breach phase); no switch -->
+<script src="js/ui/debrief.js"></script> <!-- INDEX D31: F-31.3 After the contract: data per mate (Systems); no switch -->
+<script src="js/ui/debrief-ui.js"></script> <!-- INDEX D31UI: F-31.3 the Field Report cards, pay header and the Scribe's line (Art); no switch -->
+<script src="js/campaign/places.js"></script> <!-- INDEX 32P: F-32 the 40 places of Arcadia (from the Loremaster cards) -->
+<script src="js/campaign/map-f32.js"></script> <!-- INDEX 32M: F-32 the painted explorable map of Arcadia (Art); no switch -->
+<script src="js/camp/defence-read.js"></script> <!-- INDEX DEF30R: F-30 readability (raiders under tents fade the roof, ram rim, breach-crowd rings; Art); no switch -->
+<script src="js/campaign/town.js"></script> <!-- INDEX TOWN30: F-30 part B, Varnholt holds one front (mountain map, north and east waves, militia on the wall, ladders, gate down falls back to the Keep, the sortie field gets the rock too; new story saves only); no switch -->
+<script src="js/campaign/caravan.js"></script> <!-- INDEX CARAVAN30: F-30 part C, the caravan (named refugees as the column, armed folk, Parley bands from the five founding companies; new story saves only); no switch -->
+<script src="js/campaign/long-road.js"></script> <!-- INDEX LR34: the Long Road band loop (persuade at the Parley, lent cards, guard the column, half the loot, walk away); no switch -->
+<script src="js/campaign/links.js"></script> <!-- INDEX L35: F-29 Camp links (detachment spoils, veteran mentor, vigil); no switch -->
+<script src="js/campaign/links-b.js"></script> <!-- INDEX L35b: F-29 prisoner links (exchange, lead contract); no switch -->
+<script src="js/campaign/links-f.js"></script> <!-- INDEX L35f: F-29 faction gift cards (Reliquary Shield, Freeman's Crossbows, Kraggan Plate); no switch -->
+<script src="js/campaign/links-c.js"></script> <!-- INDEX L35c: F-29 card wager at the High Crepitus table; no switch -->
+<script src="js/combat/drills.js"></script> <!-- INDEX F33: F-33 step 1, the pointer and the manual Leader (left click shoots, right click swings or Charges, X) is on by default (F33.clicks; off with ?clicks=0); the mark, drills, keys and books are always on (no master switch) -->
+<script src="js/combat/abilities-f33.js"></script> <!-- INDEX F33: F-33 step 4, one active per character (keys 1-5 and E), auto slots; no switch -->
+<script src="js/camp/books.js"></script> <!-- INDEX F33: F-33 step 5, the loadout panel (Barracks and Planning Table), fixed at march; no switch -->
+<script src="js/lines/campaign.js"></script> <!-- INDEX F34: F-34 words, data only (Narrative) -->
+<script src="js/campaign/f34.js"></script> <!-- INDEX F34: F-34 step 1, the Founding teaching campaign runner, own save slot, teach dials [T]; the start of every new game (no switch) -->
+<script src="js/campaign/intro.js"></script> <!-- INDEX F45: F-45 the Founding opening as one mission (road, three cages, Leader built at the third cage, the camp) on a clean map with a pointer (no switch; the pointer alone F45.pointer = false) -->
+<script src="js/campaign/clear-field.js"></script> <!-- INDEX CF: S6 2d, a Founding hunt ends when no foe is left (camp fight, raid lead); ?clear=0 or CF.on = false restores the old rule; CF.PICKUP_SEC is the draft pick-up time (Q57/Q58) --> <!-- INDEX F45: F-45 the Founding opening as one mission (road, three cages, Leader built at the third cage, the camp) on a clean map with a pointer (no switch; the pointer alone F45.pointer = false) -->
+<script src="js/combat/retreat.js"></script> <!-- INDEX RT45: F-45 (i)(j) the organised retreat of the wagons on a Long Road night (one roll, full / partial / miss, captive rescued next night) and a stake on every night choice; numbers [S] in RT45.K; rollback RT45.on = false (?rt45=0), RT45.stakes = false -->
+<script src="js/campaign/fixes.js"></script> <!-- INDEX FIX45: F-45 Founding plan bugs B1 to B7 (last-night advice, b10 card after a lost gate, Today block, 0 of 0 hostages, Standing tip, gate debrief words, Ilvaryn unnamed); rollback FIX45.on = false or FIX45.b1..b7 = false -->
+<script src="js/tutorial/lessons.js"></script> <!-- INDEX T45: the Founding lesson module (lesson, gate, hold, used, coach marks; F-45 teaching plan v2), and L45, the Settings row "Lessons". Off: Settings, Lessons: off -->
+<script src="js/tutorial/act1.js"></script> <!-- INDEX A45: F-45 teaching Act I, the Road (S1 to S16a) on the F45 map. Off: Settings, Lessons: off; one step T45.sw.<key> = false -->
+<script src="js/tutorial/act2.js"></script> <!-- INDEX B45: F-45 teaching Act II, Varnholt (S17 to S22 so far: camp as four buildings, hiring and the stat check, the drill yard). Off: Settings, Lessons: off; one step T45.sw.<key> = false -->
+<script src="js/tutorial/act4.js"></script> <!-- INDEX D45: F-45 teaching Act IV, the Long Road (b11, muster, morning card, actions open by night, fittings on Night 4, Night 1 to 3 lessons). Off: Settings, Lessons: off -->
+<script src="js/tutorial/act5.js"></script> <!-- INDEX K45: F-45 teaching Act V, Kalloon and the hand-over (Kalloon card, carry-over, wizard, first morning, first contract). Off: Settings, Lessons: off -->
+<!-- INDEX A31: F-24.2/.2b the Armoury page on the Quartermaster screen, the wagon cap, selling (loads after armoury30.js) --> <!-- INDEX A30: F-24.1 the Armoury deck: a counted stock of gear cards (META.armoury.stock), a loadout per Squad Leader (META.gear for the Leader, o.loadout for officers), ARM.loadoutOf the one reader, migration of the old owned list, ARM.selfTest. No switch. -->
+</body>
+</html>
+<script src="js/art/icons.js"></script> <!-- INDEX I16: F-16 painted gear icons (Art); no switch -->
+
+<script src="js/audio/voice.js"></script> <!-- INDEX V15: F-15 one voice for camp text (Art); rollback VOICE15.set(false) -->
+<script src="js/ui/ux-f33.js"></script> <!-- INDEX U33: F-33 UX pass on the loadout box (Art); no switch -->
+<script src="js/camp/living.js"></script> <!-- INDEX L36: F-36 living holdings, warehouse sun shaft + rats (Art); no switch -->
+<script src="js/art/art-sw11.js"></script> <!-- INDEX A37: SW-11 Art (Edelos wagon and ox, hub facilities, barge/warehouse skins); no switch -->
+<script src="js/camp/openbar.js"></script> <!-- INDEX OB35: F-35 open-air tavern on the barge and in the warehouse (counter, tables, seats, bar fights); no switch -->
+<script src="js/art/openbar.js"></script> <!-- INDEX OB35ART: F-35 finished bar props (table, counter, stools, lantern); no switch -->
+<script src="js/camp/kennel.js"></script> <!-- INDEX K36: F-36d kennel hounds roam the camp and kill LIVING36 rats; no switch -->
+<script src="js/audio/openbar.js"></script> <!-- INDEX OBAUD: F-35 bar sounds (chatter, cups, dice, bar fight); no switch -->
+<script src="js/audio/mix.js"></script> <!-- INDEX AMIX: F-44f effects louder, ambience and music give way in a fight; no switch -->
+<script src="js/audio/bardbrawl.js"></script> <!-- INDEX BBAUD: F-35b Bard brawl music cue (camp tune turns to its battle arrangement while BARDBRAWL.active); no switch -->
+<script src="js/camp/song-request.js"></script> <!-- INDEX SREQ: F-22 request a song from the Camp Bard (1 gp [S]); no switch -->
+<script src="js/3d/caravan.js"></script> <!-- INDEX CARAVAN3D: escort horse and wagon face their heading (F-42c); no switch -->
+<script src="js/3d/seat.js"></script> <!-- INDEX SEAT3D: seated pose for 3D people (tavern mates); no switch -->
+<script src="js/camp/tavern-walk.js"></script> <!-- INDEX TW14: F-14 walk-in tavern at the Fort (peaceful brawl room: sit to play, bar, bard); no switch -->
+<script src="js/core/calib-log.js"></script> <!-- INDEX CALIB1: BAL-BOT opt-in calibration logger (Settings tick box, one row per contract, Copy rows CSV); rollback CALIB.off=true -->
+<script src="js/combat/events.js"></script> <!-- INDEX EVT39: F-39 regional creature encounters, phase 1 (shape A mid-fight arrivals, 20/27/33% by tier [S], card hint when scouted, +25% [S] on a win); no switch -->
+<script src="js/lines/f03.js"></script> <!-- F03_LINES: F-03 contract and Flesh Guilds text (Narrative, data only) -->
+<script src="js/campaign/f03.js"></script> <!-- INDEX F03: F-03 six new contracts and the Flesh Guilds (variants on base objectives, numbers in F03.K [S]); ON by default (Patrick 2026-11-15); rollback F03.set(false) or ?f03=0 -->
+<script src="js/core/input.js"></script> <!-- INDEX INPUT43: F-43 stuck movement keys cleared on hidden/pagehide/focus and by key code; no switch -->
+<script src="js/core/mode.js"></script> <!-- INDEX MODE43: F-43 says the aim mode (AUTO or MANUAL) on the field HUD and at the start of a contract; no switch -->
+<script src="js/f46.js"></script> <!-- INDEX F46: F-46 no class nicknames (roles, ready-made Leader names and badges); no switch -->
+<script src="js/combat/recon.js"></script> <!-- INDEX RECON1: Deep Reconnaissance gives the scouts' count in the briefing (enemies, hidden posts, creature, traps); no switch -->
+<script src="js/ui/text-fixes.js"></script> <!-- INDEX TEXT48: F-48 text slips (rescue names one place; Founding screens say each thing once); no switch -->
+<script src="js/art/art-f48.js"></script> <!-- INDEX F48: F-48 Art, enemy portraits from the 3D field figures (no pixel art); no switch -->
+<script src="js/art/event-portraits.js"></script> <!-- INDEX EVP25: PD-25 painted portraits of the 19 encounter beings (shape B card picture) and PD-36 Mage and Witch faces; EVPORT.on -->
+<script src="js/art/refugee35.js"></script> <!-- INDEX REF35: PD-35 Kalloon survivors in camp look like refugees (travel-worn, unarmed); REF35.on -->
+<script src="js/ui/first-steps.js"></script> <!-- INDEX FIRST48: F-48 D1 easy first job on a new chapter's first board, T3 tenet lines on the briefing; no switch -->
+<script src="js/art/anim-weapons.js"></script> <!-- INDEX ANIM48: F-48 Art Phase 2, the held weapon matches the action (bow when shooting, blade when swinging), longer attack pose; no switch -->
+<script src="js/art/portrait-state.js"></script> <!-- INDEX PORT48: F-48 Art Phase 4, portrait state painted into the picture (scars, eye patch, wounds, sling, mana burn, pallor); no switch -->
+<script src="js/art/portraits-more.js"></script> <!-- INDEX PORT47: F-47 (b), more painted portraits for variety (extra sheets in assets/portraits47.js, chosen per person); no switch -->
+<script src="js/art/face-picker.js"></script> <!-- INDEX FACE47C: F-47c face picker for the Leader and the Chapter Master (both create screens; kept on elevation); FACE47C_ON in the file rolls back -->
+<script src="js/camp/tavern-room.js"></script> <!-- INDEX TAV48: F-48 Art (sanity 16), the tavern room repainted smooth (floor boards, walls, rugs, fireplace, candles); no switch -->
+<script src="js/ui/war-table.js"></script> <!-- INDEX WT48: F-48 B5 one camp bar and the War Table name; T1 a Promote button on Field Promotion; no switch -->
+<script src="js/ui/ux-bugs.js"></script> <!-- INDEX BUGS48: F-48 bugs B2 (dead Leader card keeps its face), B3 (aim line once, no page flag), B6 (camp toast times out, goes on screen change), B7 (no season tip in the brawl or drill); no switch -->
+<script src="js/combat/balance-f48.js"></script> <!-- INDEX BAL48: F-48 Tier 1 commanders call no enforcers, and the enemy cap (live, no switch); drafts OFF: Witch, starter squad -->
+<script src="js/phone48.js"></script> <!-- INDEX PHONE48: F-48 phone width (K18 tips on tap and long press, K19 folded Barracks panel, K20 40 px tap targets); no switch -->
+<script src="js/nomark48.js"></script> <!-- INDEX NOMARK48: F-48 K12, "No mark" over an undrilled mate with no mark and an enemy near; grey name on the Deck; no switch -->
+<script src="js/prog1-data.js"></script> <!-- INDEX PROG1: PROG-1 step 1, the entry sheet (data only) -->
+<script src="js/prog3.js"></script> <!-- INDEX PROG3: PROG-1 step 3, trait room and the Train row; always on (PROG.init, step 4) -->
+<script src="js/prog24.js"></script> <!-- INDEX PROG24: PROG-1 steps 2 and 4, tiers in the slots and the chapter library; no switch -->
+<script src="js/mom41.js"></script> <!-- INDEX MOM41: F-41 momentum (Hold factor 0.55, Cut Purse cut, Close Ranks, Supplies heal, Focus Fire); MOM41.set(false) rolls back -->
+<script src="js/prog5.js"></script> <!-- INDEX PROG5: PROG-1 step 5 panels (tier letters, Prep slot, Research, building headings); calls PROG.init at load; no switch -->
+<script src="js/tutorial/signoff.js"></script> <!-- INDEX SO45: F-45 sign-off B1, B3 to B6, K49; no switches (INT-1 group 5) -->
+<script src="js/campaign/pd35.js"></script> <!-- INDEX PD35: the Long Road outcomes (survivors as half-fee hires and camp figures; The Parley on a lost column); no switch -->
+<script src="js/campaign/pd38.js"></script> <!-- INDEX PD38: Zenif trains the Mage in Varnholt (joins at b7, out of b8 training, Magic 2 and Ray of Frost after; the Witch offer); no switch -->
+<script src="js/campaign/pd28.js"></script> <!-- INDEX PD28: the Founding Leader levels every 3 deployments (no XP ticks in the Founding; talent lesson at Level 3; road level lines on the morning card); no switch -->
+<script src="js/campaign/pd23.js"></script> <!-- INDEX PD23: gate fights: Hollow conscript waves, then the Frost-Vault host (hollow34, vault34; switch caption; b8 line) -->
+<script src="js/campaign/pd34.js"></script> <!-- INDEX PD34: detachments and officers teach on the main board after the Founding, not on the road -->
+<script src="js/campaign/pd37.js"></script> <!-- INDEX PD37: Cayde after Kalloon (roster, the free 50 gp item each season "Supplies from Lord Artemis", cheaper first build); no switch -->
+<script src="js/ui/title-layout.js"></script> <!-- INDEX TL: title screen laid out in one place (S6 1f): one centred column, two stack buttons of one width; wraps showSplash last; no switch -->
+<script src="js/ui/creator.js"></script> <!-- INDEX CR2: Leader Creator laid out in one place (S6 2a/2b, s6-3 section 8): two columns, six flavour cards, CHOSEN tag, Freeman and Human pre-picked; wraps renderCreate last; CREATOR.on = false or ?creator=0 restores the old screen -->
+<script src="js/campaign/catches.js"></script> <!-- INDEX CATCH2J: S6 row 2j, the five Social Class catches do what their cards say (temple tithe, Parley steps, noble haggle, ransom); numbers and words in one place; CATCH2J.on = false stops the costs -->
+<script src="js/3d/props3d.js"></script> <!-- INDEX PROPS3D: S6-C 3a step 4, the Founding props in 3D (coin, gem, blip, briar, stakes, cages, spells, bolts, map icons, HUD coin); never the pixel sprite; no switch (step 5 removed the ?props3d=0 rollback and the pixel prop builders) -->
+<script src="js/3d/founding-backdrops.js"></script> <!-- INDEX FOUNDBACK: plan row 2f, the Founding's between-fight backdrops (road, Varnholt, Long Road, Kalloon) in the house 3D style; FOUNDBACK.draw(name); rollback ?fback=0 -->
+<script src="js/ui/ledger.js"></script> <!-- INDEX LEDGER: U-slice 4, the Field Report as a ledger (label column and content, one DOM pass after the whole renderDebrief chain; LEDGER.on = false for the old log) -->
+<script src="js/ui/textfloor106.js"></script> <!-- INDEX TF106: Q106 guard, TEXTFLOOR106.selfTest fails on camp text under 14 px, spilt, cut or ellipsised (test-only) -->
+<script src="js/dev/selftest-guard.js"></script> <!-- INDEX STG: wraps every global selfTest so localStorage and META are put back after it runs (Engineer 17 Nov); loads last -->
